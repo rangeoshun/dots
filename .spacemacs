@@ -31,11 +31,18 @@ values."
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
    '(
+     vimscript
+     typescript
+     clojure
+     csv
+     javascript
      sql
      yaml
      html
      markdown
      ruby
+     nginx
+     ;; prettier-js
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
      ;; Uncomment some layer names and press <SPC f e R> (Vim style) or
@@ -47,13 +54,16 @@ values."
      emacs-lisp
      ruby-on-rails
      git
-     ;; markdown
+     github
+     shell
+     markdown
      ;; org
-     ;; (shell :variables
-     ;;        shell-default-height 30
-     ;;        shell-default-position 'bottom)
+     (shell :variables
+            shell-default-height 30
+            shell-default-position 'bottom)
      ;; spell-checking
-     ;; syntax-checking
+     syntax-checking
+     ;; gtags
      ;; version-control
      )
    ;; List of additional packages that will be installed without being
@@ -132,7 +142,7 @@ values."
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(atom-one-dark
+   dotspacemacs-themes '(base16-onedark
                          spacemacs-dark
                          spacemacs-light)
    ;; If non nil the cursor color matches the state color in GUI Emacs.
@@ -140,10 +150,10 @@ values."
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
    dotspacemacs-default-font '("FuraCode NF"
-                               :size 12
+                               :size 11
                                :weight normal
                                :width normal
-                               :powerline-scale 1.1)
+                               :powerline-scale 1.5)
    ;; The leader key
    dotspacemacs-leader-key "SPC"
    ;; The key used for Emacs commands (M-x) (after pressing on the leader key).
@@ -185,7 +195,7 @@ values."
    dotspacemacs-display-default-layout nil
    ;; If non nil then the last auto saved layouts are resume automatically upon
    ;; start. (default nil)
-   dotspacemacs-auto-resume-layouts t
+   dotspacemacs-auto-resume-layouts nil
    ;; Size (in MB) above which spacemacs will prompt to open the large file
    ;; literally to avoid performance issues. Opening a file literally means that
    ;; no major mode or minor modes are active. (default is 1)
@@ -225,9 +235,9 @@ values."
    ;; may increase the boot time on some systems and emacs builds, set it to
    ;; nil to boost the loading time. (default t)
    dotspacemacs-loading-progress-bar t
-   ;; If non nil the frame is fullscreen when Emacs starts up. (default nil)
+    ;; If non nil the frame is fullscreen when Emacs starts up. (default nil)
    ;; (Emacs 24.4+ only)
-   dotspacemacs-fullscreen-at-startup t
+   dotspacemacs-fullscreen-at-startup nil
    ;; If non nil `spacemacs/toggle-fullscreen' will not use native fullscreen.
    ;; Use to disable fullscreen animations in OSX. (default nil)
    dotspacemacs-fullscreen-use-non-native nil
@@ -307,7 +317,8 @@ executes.
  This function is mostly useful for variables that need to be set
 before packages are loaded. If you are unsure, you should try in setting them in
 `dotspacemacs/user-config' first."
- )
+  (setq exec-path-from-shell-arguments '("-c"))
+  )
 
 (defun dotspacemacs/user-config ()
   "Configuration function for user code.
@@ -316,58 +327,55 @@ layers configuration.
 This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
-  (setq neo-theme 'nerd)
-  (setq
-   ;; Fix separator colors
-   ns-use-srgb-colorspace nil
-   powerline-default-separator 'arrow)
-  ;; Copy to cliboard key bindings
-  (defun copy-to-clipboard ()
-    "Copies selection to x-clipboard."
-    (interactive)
-    (if (display-graphic-p)
-        (progn
-          (message "Yanked region to x-clipboard!")
-          (call-interactively 'clipboard-kill-ring-save)
-          )
-      (if (region-active-p)
-          (progn
-            (shell-command-on-region (region-beginning) (region-end) "xsel -i -b")
-            (message "Yanked region to clipboard!")
-            (deactivate-mark))
-        (message "No region active; can't yank to clipboard!")))
-    )
-
-  (defun paste-from-clipboard ()
-    "Pastes from x-clipboard."
-    (interactive)
-    (if (display-graphic-p)
-        (progn
-          (clipboard-yank)
-          (message "graphics active")
-          )
-      (insert (shell-command-to-string "xsel -o -b"))
-      )
-    )
-  (evil-leader/set-key "o y" 'copy-to-clipboard)
-  (evil-leader/set-key "o p" 'paste-from-clipboard)
+  ;; separate line nums from code
+  (unless (display-graphic-p)
+    (setq linum-format " %d "))
+  ;; key bindings for gui
+  (global-set-key (kbd "M-q") 'save-buffers-kill-terminal)
+  (global-set-key (kbd "M-v") 'yank)
+  (global-set-key (kbd "M-c") 'evil-yank)
+  (global-set-key (kbd "M-a") 'mark-whole-buffer)
+  ;;(global-set-key (kbd "M-x") 'kill-region)
+  (global-set-key (kbd "M-w") 'delete-window)
+  (global-set-key (kbd "M-W") 'delete-frame)
+  (global-set-key (kbd "M-n") 'make-frame)
+  (global-set-key (kbd "M-z") 'undo-tree-undo)
+  (global-set-key (kbd "M-s")
+                  (lambda ()
+                    (interactive)
+                    (call-interactively (key-binding "\C-x\C-s"))))
+  ;; mouse mode for iterms2
+  (setq scroll-step 1
+        scroll-conservatively 10000)
+  (global-set-key (kbd "<mouse-4>") 'scroll-down-line)
+  (global-set-key (kbd "<mouse-5>") 'scroll-up-line)
+  (setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
+  (setq mouse-wheel-progressive-speed t)
+  ;; org things
+  (setq js2-missing-semi-one-line-override t)
+  (setq js2-strict-missing-semi-warning nil)
+  (add-to-list 'auto-mode-alist '("\\.inc$" . conf-mode))
+  (add-to-list 'auto-mode-alist '("\\.rules$" . yaml-mode))
+  (setq tab-width 2)
+  (setq shell-file-name "/bin/sh")
+  (setq css-indent-offset 2)
+  (setq web-mode-css-indent-offset 2)
+  (setq js-indent-level 2)
   )
-
-;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(ansi-color-names-vector
-   ["#0a0814" "#f2241f" "#67b11d" "#b1951d" "#4f97d7" "#a31db1" "#28def0" "#b2b2b2"])
+ '(magit-commit-arguments nil)
  '(package-selected-packages
    (quote
-    (sql-indent projectile-rails inflections feature-mode yaml-mode web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data unfill smeargle orgit mwim magit-gitflow helm-gitignore helm-company helm-c-yasnippet gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link fuzzy evil-magit magit magit-popup git-commit ghub let-alist with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete mmm-mode markdown-toc markdown-mode gh-md rvm ruby-tools ruby-test-mode rubocop rspec-mode robe rbenv rake minitest chruby bundler inf-ruby ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f dash s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async))))
+    (magit-gh-pulls github-search github-clone github-browse-file gist gh marshal logito pcache ht org-projectile org-category-capture org-present org-pomodoro alert log4e gntp org-mime org-download htmlize gnuplot base16-theme vimrc-mode dactyl-mode prettier-js firebelly-theme tide typescript-mode jabber fsm git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ git-gutter diff-hl helm-gtags ggtags flycheck-pos-tip pos-tip flycheck clojure-snippets clj-refactor edn paredit peg cider-eval-sexp-fu cider seq queue clojure-mode nginx-mode phpunit phpcbf php-auto-yasnippets drupal-mode php-mode wgrep smex ivy-hydra counsel-projectile counsel swiper ivy xterm-color shell-pop multi-term eshell-z eshell-prompt-extras esh-help csv-mode web-beautify livid-mode skewer-mode simple-httpd json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc company-tern dash-functional tern coffee-mode sql-indent projectile-rails inflections feature-mode yaml-mode web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data unfill smeargle orgit mwim magit-gitflow helm-gitignore helm-company helm-c-yasnippet gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link fuzzy evil-magit magit magit-popup git-commit ghub let-alist with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete mmm-mode markdown-toc markdown-mode gh-md rvm ruby-tools ruby-test-mode rubocop rspec-mode robe rbenv rake minitest chruby bundler inf-ruby ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f dash s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async)))
+ '(require-final-newline t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:foreground "#ABB2BF" :background "#282C34")))))
+ )
