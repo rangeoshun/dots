@@ -17,7 +17,7 @@ call SpaceVim#layers#load('lang#swig')
 call SpaceVim#layers#load('lang#tmux')
 call SpaceVim#layers#load('lang#vim')
 call SpaceVim#layers#load('lang#xml')
-call SpaceVim#layers#load('shell')   
+call SpaceVim#layers#load('shell')
 call SpaceVim#layers#load('tools#screensaver')
 
 let g:spacevim_enable_vimfiler_welcome = 1
@@ -30,10 +30,10 @@ let g:spacevim_buffer_index_type = 1
 let g:neomake_vim_enabled_makers = []
 
 if executable('vimlint')
-    call add(g:neomake_vim_enabled_makers, 'vimlint') 
+    call add(g:neomake_vim_enabled_makers, 'vimlint')
 endif
 if executable('vint')
-    call add(g:neomake_vim_enabled_makers, 'vint') 
+    call add(g:neomake_vim_enabled_makers, 'vint')
 endif
 if has('python3')
     let g:ctrlp_map = ''
@@ -47,6 +47,8 @@ let g:spacevim_colorscheme = 'onedark'
 let g:spacevim_default_indent = 2
 let g:spacevim_max_column = 80
 let g:spacevim_error_symbol = '✖'
+let g:spacevim_warning_symbol = '⚠'
+let g:spacevim_info_symbol = 'ⓘ'
 let g:spacevim_enable_os_fileformat_icon = 0
 
 set norelativenumber
