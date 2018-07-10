@@ -1,8 +1,9 @@
+export TERM=xterm-256color
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
-export ZSH=/Users/range/.oh-my-zsh
+export ZSH=~/.oh-my-zsh
 
 # Set name of the theme to load. Optionally, if you set this to "random"
 # it'll load a random theme each time that oh-my-zsh is loaded.
@@ -59,6 +60,7 @@ ZSH_THEME="powerlevel9k/powerlevel9k"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
   git
+  postgres
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -92,10 +94,35 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
-export PATH=/Users/range/Library/Haskell/bin:$PATH
+# Powerlevel9k
+POWERLEVEL9K_MULTILINE_FIRST_PROMPT_PREFIX=""
+POWERLEVEL9K_MULTILINE_LAST_PROMPT_PREFIX=""
 
+POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(time root_indicator dir dir_writable todo vcs)
+POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=()
+
+POWERLEVEL9K_SHORTEN_DIR_LENGTH=1
+POWERLEVEL9K_SHORTEN_DELIMITER="."
+POWERLEVEL9K_STATUS_CROSS=true
+
+export PATH=/Users/range/Library/Haskell/bin:/usr/local/bin:$PATH
+export HISTFILE=~/.zsh_history
 bindkey -e
 bindkey '[C' forward-word
 bindkey '[D' backward-word
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+alias pg-start="launchctl load ~/Library/LaunchAgents/homebrew.mxcl.postgresql.plist"
+alias pg-stop="launchctl unload ~/Library/LaunchAgents/homebrew.mxcl.postgresql.plist"
+alias tdd="filewatcher spec --immediate --every 'if [[ !(-d $FILENAME) && -n $FILENAME ]]; then rspec $FILENAME; fi'"
+
+export PGHOST=127.0.0.1
+export PATH="/usr/local/opt/imagemagick@6/bin:$PATH"
+export PATH="/usr/local/opt/imagemagick@6/bin:$PATH"
+
+alias mdrender='pandoc --from markdown --to html | textutil -convert rtf -stdin -stdout -format html | pbcopy -Prefer rtf'
+
+export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
