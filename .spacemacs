@@ -42,7 +42,8 @@ values."
      markdown
      ruby
      nginx
-     ;; prettier-js
+     prettier-js
+     react
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
      ;; Uncomment some layer names and press <SPC f e R> (Vim style) or
@@ -106,7 +107,7 @@ values."
    ;; when the current branch is not `develop'. Note that checking for
    ;; new versions works via git commands, thus it calls GitHub services
    ;; whenever you start Emacs. (default nil)
-   dotspacemacs-check-for-update nil
+   dotspacemacs-check-for-update t
    ;; If non-nil, a form that evaluates to a package directory. For example, to
    ;; use different package directories for different Emacs versions, set this
    ;; to `emacs-version'.
@@ -126,7 +127,7 @@ values."
    ;; directory. A string value must be a path to an image format supported
    ;; by your Emacs build.
    ;; If the value is nil then no banner is displayed. (default 'official)
-   dotspacemacs-startup-banner 'official
+   dotspacemacs-startup-banner 'random
    ;; List of items to show in startup buffer or an association list of
    ;; the form `(list-type . list-size)`. If nil then it is disabled.
    ;; Possible values for list-type are:
@@ -142,17 +143,17 @@ values."
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(base16-onedark
+   dotspacemacs-themes '(sanityinc-tomorrow-bright
                          spacemacs-dark
                          spacemacs-light)
    ;; If non nil the cursor color matches the state color in GUI Emacs.
    dotspacemacs-colorize-cursor-according-to-state t
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
-   dotspacemacs-default-font '("FuraCode NF"
-                               :size 11
-                               :weight normal
-                               :width normal
+   dotspacemacs-default-font '("FuraCode Nerd Font"
+                               :size 12
+                               :weight light
+                               :width condensed
                                :powerline-scale 1.5)
    ;; The leader key
    dotspacemacs-leader-key "SPC"
@@ -244,7 +245,7 @@ values."
    ;; If non nil the frame is maximized when Emacs starts up.
    ;; Takes effect only if `dotspacemacs-fullscreen-at-startup' is nil.
    ;; (default nil) (Emacs 24.4+ only)
-   dotspacemacs-maximized-at-startup nil
+   dotspacemacs-maximized-at-startup t
    ;; A value from the range (0..100), in increasing opacity, which describes
    ;; the transparency level of a frame when it's active or selected.
    ;; Transparency can be toggled through `toggle-transparency'. (default 90)
@@ -318,7 +319,8 @@ executes.
 before packages are loaded. If you are unsure, you should try in setting them in
 `dotspacemacs/user-config' first."
   (setq exec-path-from-shell-arguments '("-c"))
-  )
+  (setq flycheck-ruby-rubocop-executable "~/.rvm/gems/ruby-2.4.3@global/gems/rubocop-0.58.1/exe/rubocop")
+)
 
 (defun dotspacemacs/user-config ()
   "Configuration function for user code.
@@ -327,6 +329,23 @@ layers configuration.
 This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
+  ;; react-mode for all .js files
+  (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+  ;; Enable ligatures
+  (mac-auto-operator-composition-mode t)
+  ;; Use arrow as saparator char
+  (setq neo-theme 'nerd)
+  (setq ns-use-srgb-colorspace nil
+        powerline-default-separator 'arrow)
+  ;; prettier auto format
+  ;; (add-hook 'js2-mode-hook 'prettier-js-mode)
+  ;; prettier settings
+  ;; (setq prettier-js-args '("--single-quote" "true"
+  ;;                          "--trailing-comma" "none"
+  ;;                          "--no-semi" "false"
+  ;;                          "--arrow-parens" "always"
+  ;;                          "--bracket-spacing" "false"
+  ;;                          ))
   ;; separate line nums from code
   (unless (display-graphic-p)
     (setq linum-format " %d "))
@@ -335,7 +354,7 @@ you should place your code here."
   (global-set-key (kbd "M-v") 'yank)
   (global-set-key (kbd "M-c") 'evil-yank)
   (global-set-key (kbd "M-a") 'mark-whole-buffer)
-  ;;(global-set-key (kbd "M-x") 'kill-region)
+  (global-set-key (kbd "M-x") 'kill-region)
   (global-set-key (kbd "M-w") 'delete-window)
   (global-set-key (kbd "M-W") 'delete-frame)
   (global-set-key (kbd "M-n") 'make-frame)
@@ -356,22 +375,61 @@ you should place your code here."
   (setq js2-strict-missing-semi-warning nil)
   (add-to-list 'auto-mode-alist '("\\.inc$" . conf-mode))
   (add-to-list 'auto-mode-alist '("\\.rules$" . yaml-mode))
+  (setq ruby-deep-indent-paren nil)
+  (setq ruby-use-smie nil)
   (setq tab-width 2)
   (setq shell-file-name "/bin/sh")
   (setq css-indent-offset 2)
   (setq web-mode-css-indent-offset 2)
   (setq js-indent-level 2)
+  ;; Pretty fonts
+  (global-prettify-symbols-mode 1)
+  (add-hook
+   'ruby-mode-hook
+   'js2-mode-hook
+   'python-mode-hook
+   (lambda ()
+     (mapc (lambda (pair) (push pair prettify-symbols-alist))
+           '(;; Syntax
+             ("def" .      #x2131)
+             ("not" .      #x2757)
+             ("in" .       #x2208)
+             ("not in" .   #x2209)
+             ("return" .   #x27fc)
+             ("yield" .    #x27fb)
+             ("for" .      #x2200)
+             ;; Base Types
+             ("int" .      #x2124)
+             ("float" .    #x211d)
+             ("str" .      #x1d54a)
+             ("True" .     #x1d54b)
+             ("False" .    #x1d53d)
+             ;; Mypy
+             ("Dict" .     #x1d507)
+             ("List" .     #x2112)
+             ("Tuple" .    #x2a02)
+             ("Set" .      #x2126)
+             ("Iterable" . #x1d50a)
+             ("Any" .      #x2754)
+             ("Union" .    #x22c3)))))
   )
+
 ;; auto-generate custom variable definitions.
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(ansi-color-names-vector
+   ["#080808" "#d70000" "#67b11d" "#875f00" "#268bd2" "#af00df" "#00ffff" "#b2b2b2"])
+ '(custom-safe-themes
+   (quote
+    ("1b8d67b43ff1723960eb5e0cba512a2c7a2ad544ddb2533a90101fd1852b426e" "628278136f88aa1a151bb2d6c8a86bf2b7631fbea5f0f76cba2a0079cd910f7d" default)))
+ '(evil-want-Y-yank-to-eol nil)
  '(magit-commit-arguments nil)
  '(package-selected-packages
    (quote
-    (magit-gh-pulls github-search github-clone github-browse-file gist gh marshal logito pcache ht org-projectile org-category-capture org-present org-pomodoro alert log4e gntp org-mime org-download htmlize gnuplot base16-theme vimrc-mode dactyl-mode prettier-js firebelly-theme tide typescript-mode jabber fsm git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ git-gutter diff-hl helm-gtags ggtags flycheck-pos-tip pos-tip flycheck clojure-snippets clj-refactor edn paredit peg cider-eval-sexp-fu cider seq queue clojure-mode nginx-mode phpunit phpcbf php-auto-yasnippets drupal-mode php-mode wgrep smex ivy-hydra counsel-projectile counsel swiper ivy xterm-color shell-pop multi-term eshell-z eshell-prompt-extras esh-help csv-mode web-beautify livid-mode skewer-mode simple-httpd json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc company-tern dash-functional tern coffee-mode sql-indent projectile-rails inflections feature-mode yaml-mode web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data unfill smeargle orgit mwim magit-gitflow helm-gitignore helm-company helm-c-yasnippet gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link fuzzy evil-magit magit magit-popup git-commit ghub let-alist with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete mmm-mode markdown-toc markdown-mode gh-md rvm ruby-tools ruby-test-mode rubocop rspec-mode robe rbenv rake minitest chruby bundler inf-ruby ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f dash s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async)))
+    (pretty-mode tomorrow-theme atom-one-dark-light-theme dracula-theme-theme drakula-theme drakula-theme-theme base-16-onedark-theme atom-onedark-theme base16-shell-colors-theme base16-shell-theme one-dark-theme magit-gh-pulls github-search github-clone github-browse-file gist gh marshal logito pcache ht org-projectile org-category-capture org-present org-pomodoro alert log4e gntp org-mime org-download htmlize gnuplot base16-theme vimrc-mode dactyl-mode prettier-js firebelly-theme tide typescript-mode jabber fsm git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ git-gutter diff-hl helm-gtags ggtags flycheck-pos-tip pos-tip flycheck clojure-snippets clj-refactor edn paredit peg cider-eval-sexp-fu cider seq queue clojure-mode nginx-mode phpunit phpcbf php-auto-yasnippets drupal-mode php-mode wgrep smex ivy-hydra counsel-projectile counsel swiper ivy xterm-color shell-pop multi-term eshell-z eshell-prompt-extras esh-help csv-mode web-beautify livid-mode skewer-mode simple-httpd json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc company-tern dash-functional tern coffee-mode sql-indent projectile-rails inflections feature-mode yaml-mode web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data unfill smeargle orgit mwim magit-gitflow helm-gitignore helm-company helm-c-yasnippet gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link fuzzy evil-magit magit magit-popup git-commit ghub let-alist with-editor company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete mmm-mode markdown-toc markdown-mode gh-md rvm ruby-tools ruby-test-mode rspec-mode robe rbenv rake minitest chruby bundler inf-ruby ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide hydra hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu highlight elisp-slime-nav dumb-jump f dash s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async)))
  '(require-final-newline t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
